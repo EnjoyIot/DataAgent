@@ -1,11 +1,11 @@
 /*
- * Copyright 2024-2025 the original author or authors.
+ * Copyright 2024-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,9 +15,9 @@
  */
 package com.alibaba.cloud.ai.dataagent.util;
 
+import com.alibaba.cloud.ai.dataagent.bo.DbConfigBO;
 import com.alibaba.cloud.ai.dataagent.connector.accessor.Accessor;
 import com.alibaba.cloud.ai.dataagent.connector.accessor.AccessorFactory;
-import com.alibaba.cloud.ai.dataagent.bo.DbConfigBO;
 import com.alibaba.cloud.ai.dataagent.entity.AgentDatasource;
 import com.alibaba.cloud.ai.dataagent.service.datasource.AgentDatasourceService;
 import com.alibaba.cloud.ai.dataagent.service.datasource.DatasourceService;
@@ -39,7 +39,7 @@ public class DatabaseUtil {
 
 	private final DatasourceService datasourceService;
 
-	public DbConfigBO getAgentDbConfig(Integer agentId) {
+	public DbConfigBO getAgentDbConfig(Long agentId) {
 		log.info("Getting datasource config for agent: {}", agentId);
 
 		// Get the enabled data source for the agent
@@ -52,7 +52,7 @@ public class DatabaseUtil {
 		return dbConfig;
 	}
 
-	public Accessor getAgentAccessor(Integer agentId) {
+	public Accessor getAgentAccessor(Long agentId) {
 		DbConfigBO dbConfig = getAgentDbConfig(agentId);
 		return accessorFactory.getAccessorByDbConfig(dbConfig);
 	}

@@ -1,11 +1,11 @@
 /*
- * Copyright 2024-2025 the original author or authors.
+ * Copyright 2024-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.alibaba.cloud.ai.dataagent.service.semantic;
 
 import com.alibaba.cloud.ai.dataagent.dto.schema.SemanticModelAddDTO;
@@ -24,12 +23,11 @@ import com.alibaba.cloud.ai.dataagent.entity.SemanticModel;
 import com.alibaba.cloud.ai.dataagent.mapper.AgentDatasourceMapper;
 import com.alibaba.cloud.ai.dataagent.mapper.SemanticModelMapper;
 import com.alibaba.cloud.ai.dataagent.vo.BatchImportResult;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -76,7 +74,7 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 	@Override
 	public boolean addSemanticModel(SemanticModelAddDTO dto) {
 		// 根据agentId查询关联的datasourceId
-		Integer datasourceId = findDatasourceIdByAgentId(dto.getAgentId().longValue());
+		Integer datasourceId = findDatasourceIdByAgentId(dto.getAgentId());
 
 		// 转换DTO为Entity
 		SemanticModel semanticModel = SemanticModel.builder()
@@ -98,11 +96,9 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 		return true;
 	}
 
-	/**
-	 * 根据agentId查找关联的datasourceId 如果有多个数据源，返回第一个启用的数据源
-	 */
+	/** 根据agentId查找关联的datasourceId 如果有多个数据源，返回第一个启用的数据源 */
 	private Integer findDatasourceIdByAgentId(Long agentId) {
-		List<AgentDatasource> agentDatasources = agentDatasourceMapper.selectByAgentId(agentId.intValue());
+		List<AgentDatasource> agentDatasources = agentDatasourceMapper.selectByAgentId(agentId);
 
 		if (agentDatasources.isEmpty()) {
 			throw new RuntimeException("No datasource found for Agent ID " + agentId);
@@ -142,12 +138,6 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 	@Override
 	public void deleteSemanticModel(Long id) {
 		semanticModelMapper.deleteById(id);
-	}
-
-	@Override
-	public void updateSemanticModel(Long id, SemanticModel semanticModel) {
-		semanticModel.setId(id);
-		semanticModelMapper.updateById(semanticModel);
 	}
 
 	@Override
@@ -192,7 +182,7 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 				else {
 					// 插入新记录
 					SemanticModel newModel = SemanticModel.builder()
-						.agentId(dto.getAgentId().intValue())
+						.agentId(dto.getAgentId())
 						.datasourceId(datasourceId)
 						.tableName(item.getTableName())
 						.columnName(item.getColumnName())
@@ -251,6 +241,12 @@ public class SemanticModelServiceImpl implements SemanticModelService {
 			result.addError("Excel导入失败: " + e.getMessage());
 			return result;
 		}
+	}
+
+	@Override
+	public void updateSemanticModel(Long id, SemanticModel semanticModel) {
+		semanticModel.setId(id);
+		semanticModelMapper.updateById(semanticModel);
 	}
 
 }

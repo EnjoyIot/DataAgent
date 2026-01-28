@@ -1,11 +1,11 @@
 /*
- * Copyright 2025 the original author or authors.
+ * Copyright 2024-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.alibaba.cloud.ai.dataagent.workflow.node;
 
 import com.alibaba.cloud.ai.dataagent.dto.planner.ExecutionStep;
@@ -23,7 +22,6 @@ import com.alibaba.cloud.ai.dataagent.prompt.PromptHelper;
 import com.alibaba.cloud.ai.dataagent.service.llm.LlmService;
 import com.alibaba.cloud.ai.dataagent.service.prompt.UserPromptService;
 import com.alibaba.cloud.ai.dataagent.enums.TextType;
-import com.alibaba.cloud.ai.dataagent.util.ReportTemplateUtil;
 import com.alibaba.cloud.ai.graph.GraphResponse;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
@@ -64,12 +62,8 @@ public class ReportGeneratorNode implements NodeAction {
 
 	private final UserPromptService promptConfigService;
 
-	private final ReportTemplateUtil reportTemplateUtil;
-
-	public ReportGeneratorNode(LlmService llmService, UserPromptService promptConfigService,
-			ReportTemplateUtil reportTemplateUtil) {
+	public ReportGeneratorNode(LlmService llmService, UserPromptService promptConfigService) {
 		this.llmService = llmService;
-		this.reportTemplateUtil = reportTemplateUtil;
 		this.converter = new BeanOutputConverter<>(new ParameterizedTypeReference<>() {
 		});
 		this.promptConfigService = promptConfigService;
@@ -85,8 +79,6 @@ public class ReportGeneratorNode implements NodeAction {
 		@SuppressWarnings("unchecked")
 		HashMap<String, String> executionResults = StateUtil.getObjectValue(state, SQL_EXECUTE_NODE_OUTPUT,
 				HashMap.class, new HashMap<>());
-
-		boolean plainReport = StateUtil.getObjectValue(state, PLAIN_REPORT, Boolean.class, false);
 
 		// Parse plan and get current step
 		Plan plan = converter.convert(plannerNodeOutput);
@@ -107,9 +99,9 @@ public class ReportGeneratorNode implements NodeAction {
 
 		// Generate report streaming flux
 		Flux<ChatResponse> reportGenerationFlux = generateReport(userInput, plan, executionResults,
-				summaryAndRecommendations, agentId, plainReport);
+				summaryAndRecommendations, agentId);
 
-		TextType reportTextType = plainReport ? TextType.MARK_DOWN : TextType.HTML;
+		TextType reportTextType = TextType.MARK_DOWN;
 
 		// Use utility class to create streaming generator with content collection
 		Flux<GraphResponse<StreamingOutput>> generator = FluxUtil.createStreamingGeneratorWithMessages(this.getClass(),
@@ -150,7 +142,7 @@ public class ReportGeneratorNode implements NodeAction {
 	 * Generates the analysis report.
 	 */
 	private Flux<ChatResponse> generateReport(String userInput, Plan plan, HashMap<String, String> executionResults,
-			String summaryAndRecommendations, Long agentId, boolean plainReport) {
+			String summaryAndRecommendations, Long agentId) {
 		// Build user requirements and plan description
 		String userRequirementsAndPlan = buildUserRequirementsAndPlan(userInput, plan);
 
@@ -162,19 +154,9 @@ public class ReportGeneratorNode implements NodeAction {
 				agentId);
 
 		String reportPrompt = PromptHelper.buildReportGeneratorPromptWithOptimization(userRequirementsAndPlan,
-				analysisStepsAndData, summaryAndRecommendations, optimizationConfigs, plainReport);
+				analysisStepsAndData, summaryAndRecommendations, optimizationConfigs);
 		log.debug("Report Node Prompt: \n {} \n", reportPrompt);
-		Flux<ChatResponse> llmStream = llmService.callUser(reportPrompt);
-		// 纯md文本报告
-		if (plainReport) {
-			return llmStream;
-		}
-
-		// html报告，先发送html模板头，然后发送llm生成的内容，最后发送html模板尾部
-		ChatResponse headerResponse = ChatResponseUtil.createPureResponse(reportTemplateUtil.getHeader());
-		ChatResponse footerResponse = ChatResponseUtil.createPureResponse(reportTemplateUtil.getFooter());
-		return Flux.concat(Flux.just(headerResponse), llmStream, Flux.just(footerResponse));
-
+		return llmService.callUser(reportPrompt);
 	}
 
 	/**
